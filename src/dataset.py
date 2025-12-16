@@ -12,6 +12,8 @@ labels = []
 
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     transforms.Normalize(MEAN, STD),
 ])
