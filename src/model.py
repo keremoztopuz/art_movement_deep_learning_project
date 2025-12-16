@@ -9,5 +9,5 @@ def create_model():
         num_classes=NUM_CLASSES,
         pretrained=True
     )
-    
+     
     return model
