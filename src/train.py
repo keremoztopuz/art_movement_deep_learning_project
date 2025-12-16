@@ -78,7 +78,4 @@ for epoch in range(EPOCHS):
 
     print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {epoch_loss:.4f}, Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_accuracy:.4f}, Val Precision: {val_epoch_precision:.4f}, Val Recall: {val_epoch_recall:.4f}, Val F1: {val_epoch_f1:.4f}")
 
-    if val_epoch_loss < best_val_loss:
-        best_val_loss = val_epoch_loss
-        torch.save(model.state_dict(), 'best_model.pth')
     
