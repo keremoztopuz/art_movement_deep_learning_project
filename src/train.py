@@ -17,6 +17,9 @@ optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 best_val_loss = float('inf')
 scheduler = StepLR(optimizer, step_size=7, gamma=0.1)
 
+patient = 5
+counter = 0
+
 for epoch in range(EPOCHS):
     model.train()
     running_loss = 0.0
@@ -62,6 +65,16 @@ for epoch in range(EPOCHS):
     val_epoch_f1 = val_f1 / len(val_loader)
 
     scheduler.step()
+
+    if val_epoch_loss < best_val_loss:
+        best_val_loss = val_epoch_loss
+        counter = 0
+        torch.save(model.state_dict(), 'best_model.pth')
+    else:
+        counter += 1
+        if counter >= patient:
+            print("Early stopping")
+            break
 
     print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {epoch_loss:.4f}, Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_accuracy:.4f}, Val Precision: {val_epoch_precision:.4f}, Val Recall: {val_epoch_recall:.4f}, Val F1: {val_epoch_f1:.4f}")
 
