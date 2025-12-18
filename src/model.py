@@ -7,7 +7,8 @@ def create_model():
     model = timm.create_model(
         MODEL_NAME,
         num_classes=NUM_CLASSES,
-        pretrained=True
+        pretrained=True,
+        drop_rate=0.3
     )
      
     return model
