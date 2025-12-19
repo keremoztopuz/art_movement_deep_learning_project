@@ -13,11 +13,15 @@ labels = []
 train_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomRotation(20),
-    transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.1),
-    transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+    transforms.RandomVerticalFlip(p=0.2),
+    transforms.RandomRotation(30),
+    transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.3, hue=0.15),
+    transforms.RandomAffine(degrees=15, translate=(0.15, 0.15), scale=(0.85, 1.15)),
+    transforms.RandomPerspective(distortion_scale=0.2, p=0.3),
+    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
     transforms.ToTensor(),
     transforms.Normalize(MEAN, STD),
+    transforms.RandomErasing(p=0.2)
 ])
 
 val_transform = transforms.Compose([

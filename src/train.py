@@ -20,12 +20,23 @@ class_weights = torch.FloatTensor(class_weights).to(DEVICE)
 model = create_model()
 model.to(DEVICE)
 criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.1)
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=0.01)
 best_val_loss = float('inf')
 scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
 
 patience = 10
 counter = 0
+
+def mixup_data(x, y, alpha=0.2):
+    lam = np.random.beta(alpha, alpha)
+    batch_size = x.size()[0]
+    index = torch.randperm(batch_size).to(x.device)
+    mixed_x = lam * x + (1 - lam) * x[index]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
 for epoch in range(EPOCHS):
     model.train()
@@ -34,9 +45,12 @@ for epoch in range(EPOCHS):
         images = images.to(DEVICE)
         labels = labels.to(DEVICE)
 
+        # MixUp uygula
+        images, targets_a, targets_b, lam = mixup_data(images, labels, alpha=0.2)
+
         optimizer.zero_grad()
         outputs = model(images)
-        loss = criterion(outputs, labels)
+        loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
         loss.backward()
         optimizer.step()
 
