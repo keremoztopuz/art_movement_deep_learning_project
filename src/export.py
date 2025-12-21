@@ -7,7 +7,7 @@ from config import IMAGE_SIZE, CHECKPOINT_DIR, MODEL_SAVE_PATH
 
 def export_to_coreml(model_path=None, output_path=None):
     model_path = model_path or MODEL_SAVE_PATH
-    output_path = output_path or os.path.join(CHECKPOINT_DIR, "art_classifier.mlmodel")
+    output_path = output_path or os.path.join(CHECKPOINT_DIR, "art_classifier.mlpackage")
     
     model = create_model(pretrained=False)
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
