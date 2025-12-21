@@ -9,14 +9,14 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 from config import (
-    DEVICE, LEARNING_RATE, EPOCHS, PATIENCE, NUM_CLASSES,
+    DEVICE, LEARNING_RATE, EPOCHS, PATIENCE,
     FOCAL_GAMMA, LABEL_SMOOTHING, CUTMIX_PROB, CUTMIX_ALPHA,
     CHECKPOINT_DIR, MODEL_SAVE_PATH
 )
 from model import create_model
 from dataset import train_loader, val_loader
 
-# focal loss
+
 class FocalLoss(nn.Module):
     def __init__(self, gamma=FOCAL_GAMMA, label_smoothing=LABEL_SMOOTHING):
         super().__init__()
@@ -32,7 +32,7 @@ class FocalLoss(nn.Module):
         focal_loss = ((1 - pt) ** self.gamma) * ce_loss
         return focal_loss.mean()
 
-# cutmix
+
 def cutmix_data(x, y, alpha=CUTMIX_ALPHA):
     lam = np.random.beta(alpha, alpha)
     batch_size = x.size()[0]
@@ -60,7 +60,7 @@ def cutmix_criterion(criterion, pred, y_a, y_b, lam):
     return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
 
-def train_single_model(model_name=None, save_path=None, epochs=None):
+def train_model(model_name=None, save_path=None, epochs=None):
     epochs = epochs or EPOCHS
     save_path = save_path or MODEL_SAVE_PATH
     
@@ -73,11 +73,10 @@ def train_single_model(model_name=None, save_path=None, epochs=None):
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=0.01)
     scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
     
-    best_val_loss = float('inf')
     best_val_acc = 0.0
     patience_counter = 0
     
-    print(f"\ntraining: {model_name or 'default model'}")
+    print(f"\ntraining: {model_name or 'convnext_tiny'}")
     print(f"device: {DEVICE}, epochs: {epochs}\n")
     
     for epoch in range(epochs):
@@ -103,32 +102,26 @@ def train_single_model(model_name=None, save_path=None, epochs=None):
             running_loss += loss.item()
         
         model.eval()
-        val_loss = 0.0
         val_correct = 0
         val_total = 0
         
         with torch.no_grad():
-            for images, labels in tqdm(val_loader, desc="validation"):
+            for images, labels in val_loader:
                 images = images.to(DEVICE)
                 labels = labels.to(DEVICE)
                 outputs = model(images)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
-                
                 _, predicted = torch.max(outputs, 1)
                 val_total += labels.size(0)
                 val_correct += (predicted == labels).sum().item()
         
         epoch_loss = running_loss / len(train_loader)
-        val_epoch_loss = val_loss / len(val_loader)
         val_acc = val_correct / val_total
         
         scheduler.step()
         
-        print(f"epoch {epoch+1}/{epochs} | train loss: {epoch_loss:.4f} | val loss: {val_epoch_loss:.4f} | val acc: {val_acc:.4f}")
+        print(f"epoch {epoch+1}/{epochs} | train loss: {epoch_loss:.4f} | val acc: {val_acc:.4f}")
         
-        if val_epoch_loss < best_val_loss:
-            best_val_loss = val_epoch_loss
+        if val_acc > best_val_acc:
             best_val_acc = val_acc
             patience_counter = 0
             torch.save(model.state_dict(), save_path)
@@ -142,37 +135,6 @@ def train_single_model(model_name=None, save_path=None, epochs=None):
     print(f"\ntraining completed! best val accuracy: {best_val_acc:.4f}\n")
     return best_val_acc
 
-# ensemble training 
-def train_ensemble(models_config=None):
-    if models_config is None:
-        models_config = [
-            ("convnext_tiny", os.path.join(CHECKPOINT_DIR, "model_convnext.pth")),
-            ("efficientnet_b4", os.path.join(CHECKPOINT_DIR, "model_effnet.pth")),
-            ("mobilenetv3_large_100", os.path.join(CHECKPOINT_DIR, "model_mobile.pth")),
-        ]
-    
-    results = {}
-    
-    for model_name, save_path in models_config:
-        acc = train_single_model(model_name=model_name, save_path=save_path)
-        results[model_name] = {"accuracy": acc, "path": save_path}
-    
-    print("\nensemble training complete")
-    for name, info in results.items():
-        print(f"{name}: {info['accuracy']:.4f}")
-    
-    return results
 
-# main 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ensemble", action="store_true")
-    parser.add_argument("--model", type=str, default=None)
-    args = parser.parse_args()
-    
-    if args.ensemble:
-        train_ensemble()
-    else:
-        train_single_model(model_name=args.model)
+    train_model()

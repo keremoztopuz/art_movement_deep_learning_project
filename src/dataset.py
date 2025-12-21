@@ -5,7 +5,7 @@ from torchvision import transforms
 from sklearn.model_selection import train_test_split
 from config import DATA_DIR, IMAGE_SIZE, MEAN, STD, BATCH_SIZE
 
-
+# train augmentation
 train_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.RandomHorizontalFlip(p=0.5),
@@ -14,12 +14,12 @@ train_transform = transforms.Compose([
     transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.3, hue=0.15),
     transforms.RandomAffine(degrees=15, translate=(0.15, 0.15), scale=(0.85, 1.15)),
     transforms.RandomPerspective(distortion_scale=0.2, p=0.3),
-    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
     transforms.ToTensor(),
     transforms.Normalize(MEAN, STD),
     transforms.RandomErasing(p=0.2),
 ])
 
+# validation transform
 val_transform = transforms.Compose([
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.ToTensor(),
